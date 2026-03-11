@@ -384,7 +384,6 @@
                   id="inp-day"
                   min="1"
                   max="130"
-                  value="1"
                   required
                   class="w-full border-none rounded-xl py-3 px-4 outline-none focus:ring-2 focus:ring-[#5b58f5] shadow-sm font-bold text-gray-700 bg-white"
                 />
@@ -570,12 +569,12 @@
                 <label
                   class="text-xs font-bold text-gray-500 uppercase mb-1 block"
                   >Target Day</label
-                ><input
+                >
+                <input
                   type="number"
                   id="bulk-day"
                   min="1"
                   max="130"
-                  value="1"
                   class="w-24 border border-indigo-200 rounded-lg p-2 outline-none focus:border-[#5b58f5] bg-white"
                 />
               </div>
@@ -714,10 +713,10 @@
       // ==========================================
       function speakWord(text) {
         if ("speechSynthesis" in window) {
-          window.speechSynthesis.cancel(); // আগের অডিও চলতে থাকলে বন্ধ করবে
+          window.speechSynthesis.cancel();
           const utterance = new SpeechSynthesisUtterance(text);
-          utterance.lang = "en-US"; // উচ্চারণ ইংরেজি (আমেরিকান)
-          utterance.rate = 0.9; // একটু ধীরলয়ে উচ্চারণ করবে বোঝার সুবিধার জন্য
+          utterance.lang = "en-US";
+          utterance.rate = 0.9;
           window.speechSynthesis.speak(utterance);
         } else {
           showToast("আপনার ডিভাইস অডিও সাপোর্ট করে না।", "error");
@@ -882,6 +881,19 @@
       }
 
       // ==========================================
+      // AUTO DAY CALCULATION
+      // ==========================================
+      function getNextAvailableDay() {
+        for (let i = 1; i <= totalDays; i++) {
+          const currentWords = vocabularyDB[i] || [];
+          if (currentWords.length < MAX_WORDS_PER_DAY) {
+            return i;
+          }
+        }
+        return totalDays; // যদি সব ফুল হয়ে যায়, ডিফল্ট হিসেবে ১৩০ রিটার্ন করবে
+      }
+
+      // ==========================================
       // 2. DASHBOARD LOGIC
       // ==========================================
       function renderDashboard() {
@@ -956,6 +968,7 @@
       // ==========================================
       const addModalEl = document.getElementById("add-word-modal");
       function openAddModal() {
+        document.getElementById("inp-day").value = getNextAvailableDay(); // Auto-fill
         addModalEl.classList.remove("hidden");
       }
       function closeAddModal() {
@@ -964,6 +977,7 @@
 
       const settingsModalEl = document.getElementById("settings-modal");
       function openSettingsModal() {
+        document.getElementById("bulk-day").value = getNextAvailableDay(); // Auto-fill
         settingsModalEl.classList.remove("hidden");
       }
       function closeSettingsModal() {
@@ -1131,9 +1145,9 @@
           if (limitReachedBlocks.length > 0) {
             document.getElementById("bulk-text").value =
               limitReachedBlocks.join("\n\n");
-            dayInput.value = dayNum + 1;
+            dayInput.value = getNextAvailableDay(); // Auto update to next available day
 
-            msg += `\n\nDay ${dayNum} এর লিমিট শেষ! বাকি শব্দগুলো বক্সে রেখে Target Day ${dayNum + 1} করা হয়েছে। আবার "Import" এ ক্লিক করুন।`;
+            msg += `\n\nDay ${dayNum} এর লিমিট শেষ! বাকি শব্দগুলো বক্সে রেখে Target Day আপডেট করা হয়েছে। আবার "Import" এ ক্লিক করুন।`;
             showToast(msg, "success");
           } else {
             document.getElementById("bulk-text").value = "";
@@ -1258,7 +1272,6 @@
         renderCard();
       }
 
-      // UPDATED RENDERCARD FOR AUDIO ICONS
       function renderCard() {
         const dayData = appData[currentDayIndex];
         const wordData = dayData.words[currentWordIndex];
